@@ -9,3 +9,6 @@ _site
 *.tgz
 .header.json
 .simstate.json
+.github
+_config.yml
+projects

@@ -1,147 +1,209 @@
-
-serial.redirect(SerialPin.P0, SerialPin.P1, BaudRate.BaudRate31250)
-pins.digitalWritePin(DigitalPin.P8, 1)
-
 let lastA = false
-
 let noteA = 35
-let velocity = 127
 
 let lastAng = 0
-let channel_1 = 1
+let channel_1 = 0
 
-let touchBuff: number[];
-let noteBuff: number[];
-let precision = 12;
-let bitDepth = Math.pow(2, precision);
-let baseNote = 36;
-let octaveScale = 3;
-let lastTouch = 0;
+let noteBuff = [-1, -1, -1, -1, -1]
+let pitchBuff = [-1, -1, -1, -1, -1]
 
-Trill.init(
-    TrillDevice.TRILL_BAR,
-    TrillSpeed.ULTRA_FAST,
-    TrillMode.AUTO,
-    precision,
-    1,
-    10
-) 
-
+let bitDepth = 3200
+let baseNote = 48
+let octaveScale = 2
+let lastTouch = 0
+let shiftThreshold = 10
+let velocity = 127
 
 const noteOnByte = 0x90
 const noteOffByte = 0x80
 const pitchBendByte = 0xE0
 const midiCCByte = 0xB0
+const afterTouchByte = 0xD0
+
+serial.redirect(SerialPin.P0, SerialPin.P1, BaudRate.BaudRate31250)
+
+Trill.init(
+    TrillDevice.TRILL_BAR,
+    TrillMode.AUTO,
+    TrillSpeed.ULTRA_FAST,
+    12,
+    1,
+    100
+)
 
 basic.forever(function () {
     let A = input.buttonIsPressed(Button.A)
-    let ang = pins.analogReadPin(AnalogPin.P1)
+    let ang = pins.analogReadPin(AnalogPin.P2)
+    let touch = Trill.numTouchRead()
+
+    Trill.read()
 
     if (A && !lastA) {
         noteOn(channel_1, noteA, velocity)
-        pins.digitalWritePin(DigitalPin.P8, 0)
     }
     else if (!A && lastA) {
         noteOff(channel_1, noteA)
-        pins.digitalWritePin(DigitalPin.P8, 1)
     }
-        
-    if (Math.abs(lastAng - ang) >= 2) {
-        let pitch = (ang - 511) * 16
-        pitchBend(channel_1, pitch)
-    }
-    let touch = Trill.numTouchRead();
 
-    if (touch <= lastTouch) {
-        for (let i = 0; i <= lastTouch; i++) {
-            for (let j = 0; j <= touch; j++) {
+    if (Math.abs(lastAng - ang) >= 2) {
+        midiCC(0, 2, ((1024 - ang) >> 3))
+    }
+
+    if ((lastTouch > 0) && (touch == 0)){
+        for (let i = 0; i < 5; i++) {
+            if (noteBuff[i] > 0){
+                noteOff(i, data2note(noteBuff[i]))
+            }
+        }
+        noteBuff = [-1, -1, -1, -1, -1]
+        pitchBuff = [-1, -1, -1, -1, -1]
+    }
+    else if (touch < lastTouch) {
+        for (let i = 0; i < lastTouch; i++) {
+            for (let j = 0; j < touch; j++) {
                 // pitchbend update
-                let temp = Trill.touchCoordinate(j);
-                if (Math.abs(temp - noteBuff[i]) < 100) {
-                    pitchBend(i, temp - noteBuff[i]);
-                    break;
+                let temp = Trill.touchCoordinate(j)
+                if ((Math.abs(temp - noteBuff[i] + pitchBuff[i]) < 200) && (Math.abs(temp - noteBuff[i] - pitchBuff[i]) > shiftThreshold)) {
+                    pitchBuff[i] = temp - noteBuff[i]
+                    pitchBend(i, pitchBuff[i])
+                    break
                 }
                 // note off
                 if (j == touch) {
-                    noteOff(i, data2note(noteBuff[i]));
-                    pitchBend(i, 0);
-                    noteBuff[i] = -1;
+                    if (noteBuff[i] > 0){
+                        noteOff(i, data2note(noteBuff[i]))
+                        pitchBend(i, 0)
+                        noteBuff[i] = -1
+                        pitchBuff[i] = 0
+                    }
+                }
+            }
+        }
+    }
+    else if (touch == lastTouch){
+        for (let i = 0; i < lastTouch; i++) {
+            for (let j = 0; j < touch; j++) {
+                // pitchbend update
+                let temp = Trill.touchCoordinate(j)
+                if ((Math.abs(temp - noteBuff[i] - pitchBuff[i]) < 200) && (Math.abs(temp - noteBuff[i] - pitchBuff[i]) > shiftThreshold)) {
+                    pitchBuff[i] = temp - noteBuff[i]
+                    pitchBend(i, pitchBuff[i])
+                    break
                 }
             }
         }
     }
     else {
-        for (let i = 0; i <= touch; i++) {
-            let temp = Trill.touchCoordinate(i);
-            for (let j = 0; j <= lastTouch; j++) {
-                // pitchbend update
-                if (Math.abs(temp - noteBuff[j]) < 100) {
-                    pitchBend(j, temp - noteBuff[j]);
-                    break;
-                }
-                // new note on
-                if (j == lastTouch) {
-                    let newChannel = lastTouch + 1;
-                    noteBuff[newChannel] = note2data(data2note(temp));
-
-                    noteOn(newChannel, data2note(noteBuff[newChannel]), 127);
-                    pitchBend(newChannel, temp - noteBuff[newChannel]);
+        for (let i = 0; i < touch; i++) {
+            let temp = Trill.touchCoordinate(i)
+            if (lastTouch == 0){
+                noteBuff[i] = temp
+                noteOn(i, data2note(temp), velocity)
+            }
+            else{
+                for (let j = 0; j < lastTouch; j++) {
+                    // pitchbend update
+                    if ((Math.abs(temp - noteBuff[j] + pitchBuff[j]) < 200) && (Math.abs(temp - noteBuff[j] - pitchBuff[j]) > shiftThreshold)) {
+                        pitchBuff[j] = temp - noteBuff[j]
+                        pitchBend(j, pitchBuff[j])
+                        break
+                    }
+                    // new note on
+                    if (j == (lastTouch - 1)) {
+                        if(noteBuff[i] < 0){
+                            noteBuff[i] = temp
+                            noteOn(i, data2note(temp), velocity)
+                            pitchBend(i, temp - noteBuff[i])
+                        }
+                    }
                 }
             }
         }
     }
+    
+    for (let i = 0; i < touch; i++) {
+        let brightness = Math.round(Math.map(Trill.touchSize(i), 2000, 5000, 5, 45))
+        
+        afterTouch(i, brightness * 3)
+        setLED(i, brightness)
+    }
 
-    lastTouch = touch;
+    lastTouch = touch
     lastAng = ang
     lastA = A
-    basic.pause(1)
 })
 
+function setLED(ch: number, brightness: number): void {
+ 
+    for (let i = 4; i >= 0; i--) {
+        if (brightness >= 8){
+            led.plotBrightness(ch, i, 128)
+        }
+        else{
+            led.plotBrightness(ch, i, brightness*16)
+        }
+        brightness -= 8
+    }
+}
 
 function note2data(note: number): number {
-    return (note - baseNote) * bitDepth / (12 * octaveScale);
+    return Math.round((note - baseNote) * bitDepth / (12 * octaveScale))
 }
 
 function data2note(data: number): number {
-    return (data * 12 * octaveScale / bitDepth) + baseNote;
+    return Math.round(data * 12 * octaveScale / bitDepth) + baseNote
 }
 
-
-function midiCC(ch: number, num: number, value: number): void{
+function midiCC(ch: number, num: number, value: number): void {
     let msg = Buffer.create(3)
     msg[0] = midiCCByte | ch
     msg[1] = num
     msg[2] = value
-  
+
     serial.writeBuffer(msg)
 }
 
-function noteOn(ch: number, note: number, vol: number): void{
-    let msgN = Buffer.create(3)
-    msgN[0] = noteOnByte | ch
-    msgN[1] = note
-    msgN[2] = vol
-  
-    serial.writeBuffer(msgN)
+function noteOn(ch: number, note: number, vol: number): void {
+    let msg = Buffer.create(3)
+    msg[0] = noteOnByte | ch + 1
+    msg[1] = note
+    msg[2] = vol
+    // serial.writeValue("channel", ch)
+    // serial.writeValue("noteOn", note)
+    serial.writeBuffer(msg)
 }
 
-function noteOff(ch: number, note: number): void{
-    let msgN = Buffer.create(2)
-    msgN[0] = noteOffByte | ch
-    msgN[1] = note
-  
-    serial.writeBuffer(msgN)
+function noteOff(ch: number, note: number): void {
+    let msg = Buffer.create(3)
+    msg[0] = noteOffByte | ch + 1
+    msg[1] = note
+    msg[2] = 127
+    // serial.writeValue("channel", ch)
+    // serial.writeValue("noteOff", note)
+    led.plotBrightness(ch, 0, 0)
+    led.plotBrightness(ch, 1, 0)
+    led.plotBrightness(ch, 2, 0)
+    led.plotBrightness(ch, 3, 0)
+    led.plotBrightness(ch, 4, 0)
+    serial.writeBuffer(msg)
 }
 
-
-function pitchBend(ch: number, shift: number): void{
-    shift = shift + 8192
+function pitchBend(ch: number, shift: number): void {
+    shift = Math.abs(Math.map(shift, -3200, 3200, 0, 16384))
 
     let msg = Buffer.create(3)
-    msg[0] = pitchBendByte | ch
+    msg[0] = pitchBendByte | ch + 1
     msg[1] = shift & 0x003F
     msg[2] = (shift - msg[1]) >> 7
-  
+    // serial.writeValue("channel", ch)
+    // serial.writeValue("bend", shift)
     serial.writeBuffer(msg)
-}        
+}
 
+function afterTouch(ch: number, pressure : number): void {
+    let msg = Buffer.create(2)
+    msg[0] = afterTouchByte | ch + 1
+    msg[1] = pressure & 0x7F
+
+    serial.writeBuffer(msg)
+}

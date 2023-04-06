@@ -2,7 +2,7 @@
 
 ## Introduction
 
-
+ddddd
 
 ## Edit this project
 
@@ -14,20 +14,28 @@ To edit this repository in MakeCode.
 
 ## Local Build
 
-Install Node.js
+1. Install [Node.js](https://nodejs.org/en/download)
 
-Install the MakeCode command line tool (add sudo on macOS)
+2. Clone this repository
 
-```cmd
-npm install -g pxt
-```
+    ```cmd
+    git clone https://github.com/DCisHurt/midiBar.git
+    ```
 
-Install depences
-```cmd
-pxt install
-```
+3. Install the MakeCode command line tool (add sudo on macOS)
 
-Build project
-```cmd
-pxt build
-```
+    ```cmd
+    npm install -g pxt
+    ```
+
+4. Install depences
+
+    ```cmd
+    pxt install
+    ```
+
+5. Build project
+
+    ```cmd
+    pxt build
+    ```

@@ -1,5 +1,10 @@
 # MakeCode
-built
+built/debug
+built/mbcodal-binary.asm
+built/mbcodal-binary.hex
+built/mbdal-binary.asm
+built/mbdal-binary.hex
+built/yotta.json
 node_modules
 yotta_modules
 yotta_targets

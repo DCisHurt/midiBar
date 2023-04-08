@@ -2,7 +2,22 @@
 
 ## Introduction
 
-ddddd
+This is a midi controller with a BBC Micro:Bit and Trill Bar combination. With the touch bar, users can easily trigger and adjust notes, with a pitch range of up to two octaves and support for up to 5 touch points. The controller also boasts the ability to adjust each note's velocity and pitch, with MIDI messages sent via MIDI Polyphonic Expression (MPE). The onboard 5x5 LED matrix of the Micro:Bit displays the change in velocity of each touch point, providing visual feedback. The external potentiometer is to send MIDI CC from 0 to 127, while the channel of MIDI CC can be adjusted using Button A and B on the Micro:Bit.
+
+## Quick Start
+
+[firmware](built/binary.hex)</br>
+[schematic](doc/Schematic.png)</br>
+
+All Midi message parameters are defined at the beginning of the script
+
+```ts
+let baseNote = 48
+let octaveScale = 2
+let shiftThreshold = 10
+let velocity = 127
+let ccReg = 2
+```
 
 ## Edit this project
 
@@ -39,3 +54,11 @@ To edit this repository in MakeCode.
     ```cmd
     pxt build
     ```
+
+## Schematic
+
+![alt text](doc/Schematic.png)
+
+## License
+
+MIT

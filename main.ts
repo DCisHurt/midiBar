@@ -1,8 +1,7 @@
 let lastA = false
-let noteA = 35
+let lastB = false
 
 let lastAng = 0
-let channel_1 = 0
 
 let noteBuff = [-1, -1, -1, -1, -1]
 let pitchBuff = [-1, -1, -1, -1, -1]
@@ -13,6 +12,7 @@ let octaveScale = 2
 let lastTouch = 0
 let shiftThreshold = 10
 let velocity = 127
+let ccReg = 2
 
 const noteOnByte = 0x90
 const noteOffByte = 0x80
@@ -33,20 +33,34 @@ Trill.init(
 
 basic.forever(function () {
     let A = input.buttonIsPressed(Button.A)
+    let B = input.buttonIsPressed(Button.B)
     let ang = pins.analogReadPin(AnalogPin.P2)
     let touch = Trill.numTouchRead()
 
     Trill.read()
 
     if (A && !lastA) {
-        noteOn(channel_1, noteA, velocity)
+        if (ccReg == 2) {
+            ccReg = 10
+        }
+        else {
+            ccReg--
+        }
+        midiCC(0, 12, 1)
     }
-    else if (!A && lastA) {
-        noteOff(channel_1, noteA)
+
+    if (B && !lastB) {
+        if (ccReg == 10) {
+            ccReg = 2
+        }
+        else {
+            ccReg++
+        }
+        midiCC(0, 11, 1)
     }
 
     if (Math.abs(lastAng - ang) >= 2) {
-        midiCC(0, 2, ((1024 - ang) >> 3))
+        midiCC(0, ccReg, ((1024 - ang) >> 3))
     }
 
     if ((lastTouch > 0) && (touch == 0)){
@@ -131,6 +145,7 @@ basic.forever(function () {
     lastTouch = touch
     lastAng = ang
     lastA = A
+    lastB = B
 })
 
 function setLED(ch: number, brightness: number): void {

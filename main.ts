@@ -57,7 +57,7 @@ basic.forever(function () {
         else {
             ccReg--
         }
-        midiCC(0, 12, 1)
+        midiCC(0, 12, ccReg - 2)
     }
 
     // if buttons B pressed, send the corresponding midi message
@@ -68,7 +68,7 @@ basic.forever(function () {
         else {
             ccReg++
         }
-        midiCC(0, 11, 1)
+        midiCC(0, 11, ccReg - 2)
     }
 
     // if potentiometer rotated, send the corresponding midi message

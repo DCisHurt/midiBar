@@ -86,6 +86,7 @@ basic.forever(function () {
         noteBuff = [-1, -1, -1, -1, -1]
         pitchBuff = [-1, -1, -1, -1, -1]
     }
+    // if number of touch is decreased, find the note off and update the pitchbend
     else if (touch < lastTouch) {
         for (let i = 0; i < lastTouch; i++) {
             for (let j = 0; j < touch; j++) {
@@ -108,6 +109,7 @@ basic.forever(function () {
             }
         }
     }
+    // if number of touch is same as last time, update the pitchbend only
     else if (touch == lastTouch){
         for (let i = 0; i < lastTouch; i++) {
             for (let j = 0; j < touch; j++) {
@@ -121,6 +123,7 @@ basic.forever(function () {
             }
         }
     }
+    // if number of touch is increased, find the note on and update the pitchbend
     else {
         for (let i = 0; i < touch; i++) {
             let temp = Trill.touchCoordinate(i)
@@ -128,20 +131,17 @@ basic.forever(function () {
                 noteBuff[i] = temp
                 noteOn(i, data2note(temp), velocity)
             }
-            else{
-                for (let j = 0; j < lastTouch; j++) {
-                    // pitchbend update
-                    if ((Math.abs(temp - noteBuff[j] + pitchBuff[j]) < 200) && (Math.abs(temp - noteBuff[j] - pitchBuff[j]) > shiftThreshold)) {
-                        pitchBuff[j] = temp - noteBuff[j]
-                        pitchBend(j, pitchBuff[j])
-                        break
-                    }
-                    // new note on
-                    if (j == (lastTouch - 1)) {
-                        if(noteBuff[i] < 0){
-                            noteBuff[i] = temp
-                            noteOn(i, data2note(temp), velocity)
-                            pitchBend(i, temp - noteBuff[i])
+            else {
+                if ((Math.abs(temp - noteBuff[i] + pitchBuff[i]) < 400)) {
+                    pitchBuff[i] = temp - noteBuff[i]
+                    pitchBend(i, pitchBuff[i])
+                }
+                else {
+                    for (let k = 0; k < touch; k++){
+                        if(noteBuff[k] < 0){
+                            noteBuff[k] = temp
+                            noteOn(k, data2note(temp), velocity)
+                            break
                         }
                     }
                 }

@@ -59,7 +59,7 @@ To edit this repository in MakeCode.
 
 ## Schematic
 
-![alt text](doc/Schematic.png)
+<div align="center"><img src="doc/Schematic.png" width="70%" /></div>
 
 ## Depences
 

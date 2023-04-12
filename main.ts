@@ -81,6 +81,7 @@ basic.forever(function () {
         for (let i = 0; i < 5; i++) {
             if (noteBuff[i] > 0){
                 noteOff(i, data2note(noteBuff[i]))
+                pitchBend(i, 0)
             }
         }
         noteBuff = [-1, -1, -1, -1, -1]
@@ -92,13 +93,13 @@ basic.forever(function () {
             for (let j = 0; j < touch; j++) {
                 // pitchbend update
                 let temp = Trill.touchCoordinate(j)
-                if ((Math.abs(temp - noteBuff[i] + pitchBuff[i]) < 200) && (Math.abs(temp - noteBuff[i] - pitchBuff[i]) > shiftThreshold)) {
+                if (Math.abs(temp - noteBuff[i] + pitchBuff[i]) < 200) {
                     pitchBuff[i] = temp - noteBuff[i]
                     pitchBend(i, pitchBuff[i])
                     break
                 }
                 // note off
-                if (j == touch) {
+                if (j == touch - 1) {
                     if (noteBuff[i] > 0){
                         noteOff(i, data2note(noteBuff[i]))
                         pitchBend(i, 0)
@@ -115,7 +116,8 @@ basic.forever(function () {
             for (let j = 0; j < touch; j++) {
                 // pitchbend update
                 let temp = Trill.touchCoordinate(j)
-                if ((Math.abs(temp - noteBuff[i] - pitchBuff[i]) < 200) && (Math.abs(temp - noteBuff[i] - pitchBuff[i]) > shiftThreshold)) {
+                if ((Math.abs(temp - noteBuff[i] - pitchBuff[i]) < 200) &&
+                    (Math.abs(temp - noteBuff[i] - pitchBuff[i]) > shiftThreshold)) {
                     pitchBuff[i] = temp - noteBuff[i]
                     pitchBend(i, pitchBuff[i])
                     break
@@ -132,7 +134,7 @@ basic.forever(function () {
                 noteOn(i, data2note(temp), velocity)
             }
             else {
-                if ((Math.abs(temp - noteBuff[i] + pitchBuff[i]) < 400)) {
+                if (Math.abs(temp - noteBuff[i] + pitchBuff[i]) < 200) {
                     pitchBuff[i] = temp - noteBuff[i]
                     pitchBend(i, pitchBuff[i])
                 }
@@ -150,11 +152,16 @@ basic.forever(function () {
     }
     
     // update the LED brightness and touch velocity
-    for (let i = 0; i < touch; i++) {
-        let brightness = Math.round(Math.map(Trill.touchSize(i), 2000, 5000, 5, 45))
-        
-        afterTouch(i, brightness * 3)
-        setLED(i, brightness)
+    for (let i = 0; i < 5; i++) {
+        let size = Trill.touchSize(i)
+        if(size > 0){
+            let brightness = Math.round(Math.map(size, 2000, 5000, 5, 45))
+            afterTouch(i, brightness * 3)
+            setLED(i, brightness)
+        }
+        else {
+            setLED(i, 0)
+        }
     }
 
     // update the last state

@@ -112,17 +112,11 @@ basic.forever(function () {
     }
     // if number of touch is same as last time, update the pitchbend only
     else if (touch == lastTouch){
-        for (let i = 0; i < lastTouch; i++) {
-            for (let j = 0; j < touch; j++) {
-                // pitchbend update
-                let temp = Trill.touchCoordinate(j)
-                if ((Math.abs(temp - noteBuff[i] - pitchBuff[i]) < 200) &&
-                    (Math.abs(temp - noteBuff[i] - pitchBuff[i]) > shiftThreshold)) {
-                    pitchBuff[i] = temp - noteBuff[i]
-                    pitchBend(i, pitchBuff[i])
-                    break
-                }
-            }
+        for (let i = 0; i < touch; i++) {
+            // pitchbend update
+            let temp = Trill.touchCoordinate(i)
+            pitchBuff[i] = temp - noteBuff[i]
+            pitchBend(i, pitchBuff[i])
         }
     }
     // if number of touch is increased, find the note on and update the pitchbend

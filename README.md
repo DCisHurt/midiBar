@@ -8,8 +8,8 @@ The onboard 5x5 LED matrix of the Micro:Bit displays the change in velocity of e
 
 ## Quick Start
 
-[firmware](built/binary.hex)</br>
-[schematic](doc/Schematic.png)</br>
+[firmware](https://github.com/DCisHurt/midiBar/releases/tag/v1.0.0)</br>
+[schematic](doc/Schematic.pdf)</br>
 
 All Midi message parameters are defined at the beginning of the script
 
